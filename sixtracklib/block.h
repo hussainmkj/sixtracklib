@@ -17,11 +17,6 @@
 #include "beam.h"
 #include "value.h"
 
-typedef enum type_t {IntegerID, DoubleID,
-             DriftID, DriftExactID,
-             MultipoleID, CavityID, AlignID,
-             BlockID} type_t;
-
 typedef struct {
     unsigned int size;
     uint64_t last;

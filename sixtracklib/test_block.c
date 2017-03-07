@@ -3,6 +3,7 @@
 #include "block_handling.c"
 
 
+
 int main(int argc, char **argv) {
     CLGLOBAL block_t *block;
     block = block_initialize(2);
@@ -18,5 +19,4 @@ int main(int argc, char **argv) {
         printf("%lu, ", block->data[i].u64);
     }
     printf("\n");
-    block_clean(block);
 }

@@ -10,7 +10,7 @@ all: lib
 lib: block.so
 
 
-block.o: block.c block.h beam.h track.c track.h value.h
+block.o: block.c block.h beam.h track.h track_elements.h track_element_definitions.h track_dispatch.h value.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 block.so: block.o

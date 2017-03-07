@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <math.h>
+#include "track_elements.h"
 
 CLGLOBAL block_t* block_initialize(unsigned int size) {
     CLGLOBAL block_t *block = malloc(sizeof(CLGLOBAL block_t*));
