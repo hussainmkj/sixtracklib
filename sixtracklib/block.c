@@ -12,7 +12,7 @@
 
 
 #include "block.h"
-#include "track.c"
+#include "track_elements.h"
 
 
 // Data management
@@ -56,27 +56,10 @@ int track_single(CLGLOBAL value_t *data,
        };
        enum type_t typeid = get_type(data, elemid);
        elem=data+elemid+1; //Data starts after typeid
-//       _DP("Block_track: elemid=%zu typedid=%u\n",elemid,typeid);
-       switch (typeid) {
-           case DriftID:
-                Drift_track(p, (CLGLOBAL Drift*) elem);
-           break;
-           case MultipoleID:
-                Multipole_track(p, (CLGLOBAL Multipole*) elem);
-           break;
-           case CavityID:
-                Cavity_track(p, (CLGLOBAL Cavity*) elem);
-           break;
-           case AlignID:
-                Align_track(p, (CLGLOBAL Align*) elem);
-           break;
-           case IntegerID: break;
-           case DoubleID: break;
-           case BlockID: break;
-           case DriftExactID:
-                DriftExact_track(p, (CLGLOBAL DriftExact*) elem);
-           break;
-       }
+       #define TRACK_DISPATCH_ID typeid
+       #define TRACK_DISPATCH_ELEM elem
+       #define TRACK_DISPATCH_PART p
+       #include TRACK_DISPATCH
        if (elembyelemoff>0){
          uint64_t dataoff=elembyelemoff+sizeof(Particle)/8 * i_part;
          for (int i_attr=0;i_attr<sizeof(Particle)/8;i_attr++) {
