@@ -13,22 +13,24 @@
 
 #include "block.h"
 
-#define _CUDA_HOST_DEVICE_
 #define DATA_PTR_IS_OFFSET
 #include "../common/track.h"
 
 //Data management
 
+_CUDA_HOST_DEVICE_
 type_t get_type(CLGLOBAL value_t *data, uint64_t elemid ) {
   return (type_t) data[elemid].i64;
 }
 
 //Block
 
+_CUDA_HOST_DEVICE_
 uint64_t Block_get_nelen(CLGLOBAL value_t *data, size_t elemid ) {
   return data[elemid + 1].i64;
 }
 
+_CUDA_HOST_DEVICE_
 CLGLOBAL uint64_t *Block_get_elemids(CLGLOBAL value_t *data, size_t elemid ) {
   return &data[elemid + 2].u64 ;
 }
@@ -39,6 +41,7 @@ CLGLOBAL uint64_t *Block_get_elemids(CLGLOBAL value_t *data, size_t elemid ) {
 //#include <stdio.h>
 //#endif
 
+_CUDA_HOST_DEVICE_
 int track_single(CLGLOBAL value_t *data,
                  CLGLOBAL Particle *particles,
                  CLGLOBAL uint64_t *elemids,
@@ -106,7 +109,7 @@ CLKERNEL void Block_track(
                  uint64_t elembyelemid, uint64_t turnbyturnid){
    uint64_t nelem    = Block_get_nelen(data, blockid);
    CLGLOBAL uint64_t *elemids = Block_get_elemids(data, blockid);
-   uint64_t i_part = get_global_id(0);
+   uint64_t i_part = GLOBAL_INDEX;
    uint64_t elembyelemoff=0;
    uint64_t turnbyturnoff=0;
    for (int i_turn=0; i_turn< nturn; i_turn++){
