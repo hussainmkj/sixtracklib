@@ -56,10 +56,10 @@ int track_single(CLGLOBAL value_t *data,
                  ((CLGLOBAL value_t *) p)[i_attr];
          }
        };
-       type_t typeid = get_type(data, elemid);
-       elem=data+elemid+1; //Data starts after typeid
-//       _DP("Block_track: elemid=%zu typedid=%u\n",elemid,typeid);
-       switch (typeid) {
+       type_t type_id = get_type(data, elemid);
+       elem=data+elemid+1; //Data starts after type_id
+//       _DP("Block_track: elemid=%zu typedid=%u\n",elemid,type_id);
+       switch (type_id) {
            case DriftID:
                 Drift_track(p, (CLGLOBAL Drift*) elem);
            break;
