@@ -34,8 +34,14 @@
   #endif
   #define _GPUCODE
 #else
+#ifdef __NVCC__
+  #define CLGLOBAL
+  #define CLKERNEL __global__
+  #define _GPUCODE
+#else
   #define CLGLOBAL
   #define CLKERNEL
+#endif
 #endif
 
 
