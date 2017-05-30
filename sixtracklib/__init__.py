@@ -15,3 +15,4 @@ submit itself to any jurisdiction.
 
 from cblock import cBlock
 from cbeam import cBeam
+from cuda_cblock import cuda_cblock
