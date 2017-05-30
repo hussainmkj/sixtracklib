@@ -56,7 +56,7 @@ int track_single(CLGLOBAL value_t *data,
                  ((CLGLOBAL value_t *) p)[i_attr];
          }
        };
-       enum type_t typeid = get_type(data, elemid);
+       type_t typeid = get_type(data, elemid);
        elem=data+elemid+1; //Data starts after typeid
 //       _DP("Block_track: elemid=%zu typedid=%u\n",elemid,typeid);
        switch (typeid) {
