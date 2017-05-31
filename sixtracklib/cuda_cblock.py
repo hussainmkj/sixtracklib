@@ -82,7 +82,7 @@ class TurnByTurn(object):
         beam.particles=beam.particles.reshape((self.nturn,self.npart))
         return beam
 
-class cBlock(object):
+class cuda_cBlock(object):
   @classmethod
   def from_line(cls,line):
     block=cls()
