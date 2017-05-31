@@ -254,10 +254,10 @@ class cuda_cBlock(object):
      elembyelemid=np.uint64(elembyelemid)
      turnbyturnid=np.uint64(turnbyturnid)
      prg.get_function("Block_track")(
-                     cuda.InOUt(self.data), cuda.InOut(self.particles),
+                     cuda.InOut(self.data), cuda.InOut(beam.particles),
                      blockid, nturn, npart,
                      elembyelemid, turnbyturnid,
-                     block=(npart, 1, 1))
+                     block=(int(npart), 1, 1))
      if elembyelem:
        self.elembyelem=_elembyelem.get_beam()
      if turnbyturn:
