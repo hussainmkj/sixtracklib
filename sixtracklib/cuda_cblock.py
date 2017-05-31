@@ -248,16 +248,26 @@ class cuda_cBlock(object):
      if turnbyturn:
          _turnbyturn=self._set_turnbyturn(beam,nturn)
          turnbyturnid=_turnbyturn.offset
-     blockid=np.uint64(self.blockid)
-     nturn=np.uint64(nturn)
-     npart=np.uint64(beam.npart)
-     elembyelemid=np.uint64(elembyelemid)
-     turnbyturnid=np.uint64(turnbyturnid)
-     prg.get_function("Block_track")(
-                     cuda.InOut(self.data), cuda.InOut(beam.particles),
+     data_g = cuda.mem_alloc(self.data.nbytes)
+     part_g = cuda.mem_alloc(beam.particles.nbytes)
+     cuda.memcpy_htod(data_g, self.data.data)
+     cuda.memcpy_htod(part_g, beam.particles)
+     blockid = np.uint64(self.blockid)
+     nturn = np.uint64(nturn)
+     npart = np.uint64(beam.npart)
+     elembyelemid = np.uint64(elembyelemid)
+     turnbyturnid = np.uint64(turnbyturnid)
+     kern = prg.get_function("Block_track")
+     signiture = (np.intp, )*2 + (np.uint64, )*5
+     kern.prepare(signiture)
+     block = (beam.npart, 1, 1)
+     grid = (1, 1)
+     kern.prepared_call(grid, block,
+                     data_g, part_g,
                      blockid, nturn, npart,
-                     elembyelemid, turnbyturnid,
-                     block=(int(npart), 1, 1))
+                     elembyelemid, turnbyturnid)
+     cuda.memcpy_dtoh(self.data.data, data_g)
+     cuda.memcpy_dtoh(beam.particles, part_g)
      if elembyelem:
        self.elembyelem=_elembyelem.get_beam()
      if turnbyturn:
