@@ -3,6 +3,7 @@ import numpy as np
 
 import sixtracktools
 import sixtracklib
+import sixtracklib.track as track
 
 
 six =sixtracktools.SixTrackInput('.')
@@ -14,7 +15,7 @@ names2=np.array(names)[iconv]
 
 sixtrackbeam=sixtracktools.SixDump3('dump3.dat')
 
-block=sixtracklib.cBlock.from_line(line)
+block=sixtracklib.Block.from_line(line)
 bref=sixtracklib.cBeam.from_full_beam(sixtrackbeam.get_full_beam())
 bref=bref.reshape(-1,2)
 
@@ -24,7 +25,7 @@ npart=int(sys.argv[1])
 nturn=int(sys.argv[2])
 cbeam=bref.copy().reshape(-1)[:npart]
 st=time.time()
-block.track_cl(cbeam,nturn=nturn,turnbyturn=True)
+track.cl.track(block, cbeam,nturn=nturn,turnbyturn=True)
 st=time.time()-st
 perfgpu=st/npart/nturn*1e6
 print("GPU part %4d, turn %4d: %10.3f usec/part*turn"%(npart,nturn,perfgpu))
@@ -32,7 +33,7 @@ print("GPU part %4d, turn %4d: %10.3f usec/part*turn"%(npart,nturn,perfgpu))
 npart/=100
 cbeam=bref.copy().reshape(-1)[:npart]
 st=time.time()
-block.track(cbeam,nturn=nturn,turnbyturn=True)
+track.cpu.track(block, cbeam,nturn=nturn,turnbyturn=True)
 st=time.time()-st
 perfcpu=st/npart/nturn*1e6
 print("CPU part %4d, turn %4d: %10.3f usec/part*turn"%(npart,nturn,perfcpu))
