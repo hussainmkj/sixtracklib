@@ -33,9 +33,9 @@ def track(block,beam,nturn=1,elembyelem=False,turnbyturn=False):
   kern = prg.get_function("Block_track")
   signiture = (np.intp, )*2 + (np.uint64, )*5
   kern.prepare(signiture)
-  block = (beam.npart, 1, 1)
-  grid = (1, 1)
-  kern.prepared_call(grid, block,
+  kern_block = (beam.npart, 1, 1)
+  kern_grid = (1, 1)
+  kern.prepared_call(kern_grid, kern_block,
                   data_g, part_g,
                   blockid, nturn, npart,
                   elembyelemid, turnbyturnid)
