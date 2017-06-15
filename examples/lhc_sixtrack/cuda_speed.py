@@ -14,7 +14,7 @@ names2=np.array(names)[iconv]
 
 sixtrackbeam=sixtracktools.SixDump3('dump3.dat')
 
-block=sixtracklib.cuda_cBlock.from_line(line)
+block=sixtracklib.Block.from_line(line)
 bref=sixtracklib.cBeam.from_full_beam(sixtrackbeam.get_full_beam())
 bref=bref.reshape(-1,2)
 
