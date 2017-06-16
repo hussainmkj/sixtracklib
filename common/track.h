@@ -33,7 +33,7 @@ typedef struct {
 } Drift ;
 
 _CUDA_HOST_DEVICE_
-int Drift_track(CLGLOBAL Particle* p, CLGLOBAL Drift *el){
+int Drift_track(CLGLOBAL Particle* p, __constant Drift *el){
   double xp, yp;
   double length=el->length;
   xp = p->px * p->rpp;
@@ -55,7 +55,7 @@ typedef struct {
 } DriftExact ;
 
 _CUDA_HOST_DEVICE_
-int DriftExact_track(CLGLOBAL Particle* p, CLGLOBAL DriftExact *el){
+int DriftExact_track(CLGLOBAL Particle* p, __constant DriftExact *el){
   double lpzi, lbzi, px, py, opd;
   double length = el->length;
   opd=1+p->delta;
@@ -82,13 +82,13 @@ typedef struct {
 } Multipole;
 
 _CUDA_HOST_DEVICE_
-int Multipole_track(CLGLOBAL Particle* p, CLGLOBAL Multipole *el){
+int Multipole_track(CLGLOBAL Particle* p, __constant Multipole *el){
   double x,y,chi,dpx,dpy,zre,zim,b1l,a1l,hxx,hyy;
   long int order=el->order;
   double hxl=el->hxl;
   double hyl=el->hyl;
   double l=el->l;
-  CLGLOBAL double *bal = el->bal;
+  __constant double *bal = el->bal;
   dpx=bal[order*2];
   dpy=bal[order*2+1];
   x=p->x; y=p->y; chi=p->chi;
@@ -126,7 +126,7 @@ typedef struct {
 } Cavity;
 
 _CUDA_HOST_DEVICE_
-int Cavity_track(CLGLOBAL Particle* p, CLGLOBAL Cavity *el){
+int Cavity_track(CLGLOBAL Particle* p, __constant Cavity *el){
   double volt = el->volt;
   double freq = el->freq;
   double lag = el->lag;
@@ -158,7 +158,7 @@ typedef struct {
 } Align;
 
 _CUDA_HOST_DEVICE_
-int Align_track(CLGLOBAL Particle* p, CLGLOBAL Align *el){
+int Align_track(CLGLOBAL Particle* p, __constant Align *el){
   double xn,yn;
   double cz = el->cz;
   double sz = el->sz;
@@ -208,7 +208,7 @@ LinMap_data LinMap_init( double alpha_x_s0, double beta_x_s0, double alpha_x_s1,
 }
 
 _CUDA_HOST_DEVICE_
-int LinMap_track(CLGLOBAL Particle* p, CLGLOBAL LinMap_data *el){
+int LinMap_track(CLGLOBAL Particle* p, __constant LinMap_data *el){
   double M00 = el->matrix[0];
   double M01 = el->matrix[1];
   double M10 = el->matrix[2];
@@ -241,26 +241,26 @@ typedef struct {
     double beta_s;
     double q_s;
     long int trasv_field_type; //1: round gaussian
-    CLGLOBAL void* field_map_data;
+    __constant void* field_map_data;
 } BB4D_data;
 
 _CUDA_HOST_DEVICE_
-int BB4D_track(CLGLOBAL Particle* p, CLGLOBAL BB4D_data *el){
+int BB4D_track(CLGLOBAL Particle* p, __constant BB4D_data *el){
   
   double Ex, Ey;
 
   #ifdef DATA_PTR_IS_OFFSET
-    CLGLOBAL void * ptr = ((CLGLOBAL uint64_t*) (&(el->field_map_data))) + ((uint64_t) el->field_map_data) + 1;
+    __constant void * ptr = ((__constant uint64_t*) (&(el->field_map_data))) + ((uint64_t) el->field_map_data) + 1;
   #else
     void * ptr = el->field_map_data;
   #endif
 
   switch(el->trasv_field_type){
     case 1: 
-      get_transv_field_gauss_round( (CLGLOBAL transv_field_gauss_round_data*) ptr, p->x, p->y, &Ex, &Ey);
+      get_transv_field_gauss_round( (__constant transv_field_gauss_round_data*) ptr, p->x, p->y, &Ex, &Ey);
       break;
     case 2:
-      get_transv_field_gauss_ellip( (CLGLOBAL transv_field_gauss_ellip_data*) ptr, p->x, p->y, &Ex, &Ey);
+      get_transv_field_gauss_ellip( (__constant transv_field_gauss_ellip_data*) ptr, p->x, p->y, &Ex, &Ey);
       break;
     default:
       Ex = 1/0.;

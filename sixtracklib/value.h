@@ -33,9 +33,21 @@
     #pragma OPENCL EXTENSION cl_khr_fp64 : enable
   #endif
   #define _GPUCODE
+  #define GLOBAL_INDEX get_global_id(0)
+  #define _CUDA_HOST_DEVICE_
+#else
+#ifdef __NVCC__
+  #define _CUDA_HOST_DEVICE_ __device__
+  #define CLGLOBAL
+  #define CLKERNEL __global__
+  #define _GPUCODE
+  #define GLOBAL_INDEX threadIdx.x
 #else
   #define CLGLOBAL
   #define CLKERNEL
+  #define _CUDA_HOST_DEVICE_
+  #define __constant
+#endif
 #endif
 
 
@@ -52,6 +64,7 @@ typedef union value_t {
   double f64;
   long signed int i64;
   long unsigned int u64;
+  //unsigned int u32;
 } value_t;
 
 

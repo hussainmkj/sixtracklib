@@ -3,8 +3,8 @@ import numpy as np
 
 import sixtracktools
 import sixtracklib
-import sixtracklib.track as track
-
+import sixtracklib.track.cuda as cuda
+import sixtracklib.track.cpu as cpu
 
 six =sixtracktools.SixTrackInput('.')
 line,rest,iconv=six.expand_struct()
@@ -25,7 +25,7 @@ npart=int(sys.argv[1])
 nturn=int(sys.argv[2])
 cbeam=bref.copy().reshape(-1)[:npart]
 st=time.time()
-track.cl.track(block, cbeam,nturn=nturn, track_by_turn=True)
+cuda.track(block, cbeam,nturn=nturn,turnbyturn=True)
 st=time.time()-st
 perfgpu=st/npart/nturn*1e6
 print("GPU part %4d, turn %4d: %10.3f usec/part*turn"%(npart,nturn,perfgpu))
@@ -33,7 +33,7 @@ print("GPU part %4d, turn %4d: %10.3f usec/part*turn"%(npart,nturn,perfgpu))
 npart/=100
 cbeam=bref.copy().reshape(-1)[:npart]
 st=time.time()
-track.cpu.track(block, cbeam,nturn=nturn, track_by_turn=True)
+cpu.track(block, cbeam,nturn=nturn,turnbyturn=True)
 st=time.time()-st
 perfcpu=st/npart/nturn*1e6
 print("CPU part %4d, turn %4d: %10.3f usec/part*turn"%(npart,nturn,perfcpu))

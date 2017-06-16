@@ -1,30 +1,6 @@
-import ctypes
-import time
-import os
-
-
 import numpy as np
 
-from .cbeam import cBeam
-
-modulepath=os.path.dirname(os.path.abspath(__file__))
-
-try:
-  import pyopencl as cl
-  os.environ['PYOPENCL_COMPILER_OUTPUT']='1'
-  srcpath = ['-I%s'%modulepath,'-I%s/../common'%modulepath]
-  src=open(os.path.join(modulepath,'block.c')).read()
-  ctx = cl.create_some_context(interactive=False)
-  prg=cl.Program(ctx,src).build(options=srcpath)
-  queue = cl.CommandQueue(ctx)
-  mf = cl.mem_flags
-  rw=mf.READ_WRITE | mf.COPY_HOST_PTR
-except ImportError:
-  print("Warning: error import OpenCL: track_cl not available")
-  cl=None
-  pass
-
-
+from cbeam import cBeam
 value_t = np.dtype((np.float64,
                {'i32':('i4', 0),
                 'u64':('u8', 0),
@@ -33,59 +9,44 @@ value_t = np.dtype((np.float64,
 
 
 class typeid(object):
-  IntegerID=0
-  DoubleID=1
-  DriftID=2
-  DriftExactID=3
-  MultipoleID=4
-  CavityID=5
-  AlignID=6
+  DriftID=0
+  DriftExactID=1
+  MultipoleID=2
+  CavityID=3
+  AlignID=4
+  LinMapID=5
+  BB4DID=6
   BlockID=7
-  LinMapID=8
-  BB4DID=9
 
-
-blocklibpath=os.path.join(modulepath, 'block.so')
-blocklib=ctypes.CDLL(blocklibpath)
-blocklib.Block_track.argtypes=[ctypes.c_void_p, # *data
-                               ctypes.c_void_p, # *particles
-                               ctypes.c_uint64, # blockid
-                               ctypes.c_uint64, # nturn
-                               ctypes.c_uint64, # elembyelemid
-                               ctypes.c_uint64 ] # turnbyturnid
 
 
 class ElemByElem(object):
     def __init__(self,block,offset,size,nelem,nturn,npart):
-        self.block=block
         self.offset=offset
         self.size=size
+        self.view = block.data[offset: offset+size]
         self.nelem=nelem
         self.npart=npart
         self.nturn=nturn
     def get_beam(self):
-        particles=self.block.data[self.offset:
-                        self.offset+self.size]
-        beam=cBeam(particles=particles)
+        beam=cBeam(particles=self.view)
         beam.particles=beam.particles.reshape(
             (self.nelem,self.nturn,self.npart))
         return beam
 
 class TurnByTurn(object):
     def __init__(self,block,offset,size,nturn,npart):
-        self.block=block
         self.offset=offset
         self.size=size
+        self.view = block.data[offset:offset+size]
         self.npart=npart
         self.nturn=nturn
     def get_beam(self):
-        particles=self.block.data[self.offset:
-                        self.offset+self.size]
-        beam=cBeam(particles=particles)
+        beam=cBeam(particles=self.view)
         beam.particles=beam.particles.reshape((self.nturn,self.npart))
         return beam
 
-class cBlock(object):
+class Block(object):
   @classmethod
   def from_line(cls,line):
     block=cls()
@@ -214,58 +175,16 @@ class cBlock(object):
     self._add_integer(typeid.BlockID)
     self._add_integer(len(offsets))
     self._add_integer_array(offsets)
-  def _set_elembyelem(self,beam,nturn):
+  def set_elembyelem(self,beam,nturn):
     nelem=len(self.offsets)
     size=beam.get_size()*nelem*nturn
     offset=self.last
     self._add_float_array(np.zeros(size))
     #print size, nelem, nturn, beam.npart, offset, len(self.data)
     return ElemByElem(self,offset,size,nelem,nturn,beam.npart)
-  def _set_turnbyturn(self,beam,nturn):
+  def set_turnbyturn(self,beam,nturn):
     size=beam.get_size()*nturn
     offset=self.last
     self._add_float_array(np.zeros(size))
     return TurnByTurn(self,offset,size,nturn,beam.npart)
-  def track(self,beam,nturn=1,elembyelem=False,turnbyturn=False):
-    elembyelemid=0;turnbyturnid=0;
-    if elembyelem:
-        _elembyelem=self._set_elembyelem(beam,nturn)
-        elembyelemid=_elembyelem.offset
-    if turnbyturn:
-        _turnbyturn=self._set_turnbyturn(beam,nturn)
-        turnbyturnid=_turnbyturn.offset
-    #print self.blockid,nturn,elembyelemid,turnbyturnid,self.size
-    blocklib.Block_track(self.data.ctypes.data, beam.ctypes(),
-                         self.blockid, nturn,
-                         elembyelemid,turnbyturnid)
-    if elembyelem:
-      self.elembyelem=_elembyelem.get_beam()
-    if turnbyturn:
-      self.turnbyturn=_turnbyturn.get_beam()
-  if cl:
-    def track_cl(self,beam,nturn=1,elembyelem=False,turnbyturn=False):
-     elembyelemid=0;turnbyturnid=0;
-     if elembyelem:
-         _elembyelem=self._set_elembyelem(beam,nturn)
-         elembyelemid=_elembyelem.offset
-     if turnbyturn:
-         _turnbyturn=self._set_turnbyturn(beam,nturn)
-         turnbyturnid=_turnbyturn.offset
-     data_g=cl.Buffer(ctx, rw, hostbuf=self.data)
-     part_g=cl.Buffer(ctx, rw, hostbuf=beam.particles)
-     blockid=np.uint64(self.blockid)
-     nturn=np.uint64(nturn)
-     npart=np.uint64(beam.npart)
-     elembyelemid=np.uint64(elembyelemid)
-     turnbyturnid=np.uint64(turnbyturnid)
-     prg.Block_track(queue,[beam.npart],None,
-                     data_g, part_g,
-                     blockid, nturn, npart,
-                     elembyelemid, turnbyturnid)
-     cl.enqueue_copy(queue,self.data,data_g)
-     cl.enqueue_copy(queue,beam.particles,part_g)
-     if elembyelem:
-       self.elembyelem=_elembyelem.get_beam()
-     if turnbyturn:
-       self.turnbyturn=_turnbyturn.get_beam()
 

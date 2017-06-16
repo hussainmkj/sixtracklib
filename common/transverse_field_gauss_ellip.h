@@ -39,7 +39,7 @@ typedef struct{
 
 
 _CUDA_HOST_DEVICE_
-void get_transv_field_gauss_ellip(CLGLOBAL transv_field_gauss_ellip_data* data,
+void get_transv_field_gauss_ellip(__constant transv_field_gauss_ellip_data* data,
                                   double x, double y, double* Ex_out, double* Ey_out){
     
   double sigmax = data->sigma_x;
