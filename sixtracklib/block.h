@@ -10,41 +10,41 @@
 //granted to it by virtue of its status as an Intergovernmental Organization or
 //submit itself to any jurisdiction.
 
-
 #ifndef _BLOCK_
 #define _BLOCK_
 
 #include "tracking_beam.h"
 #include "value.h"
 
-typedef enum type_t {
-             DriftID, DriftExactID,
-             MultipoleID, CavityID, AlignID,
-             LinMapID,BB4DID,
-             BlockID
-} type_t;
+enum element_type {
+	DriftID, DriftExactID,
+	MultipoleID, CavityID, AlignID,
+	LinMapID, BB4DID,
+	BlockID
+};
 
 #ifdef _GPUCODE
 
-CLKERNEL void Block_track(
-                 __constant value_t *elements_data, __constant unsigned int *elements_offsets, CLGLOBAL Particle *particles,
-                 unsigned int nturn, unsigned int npart
-                 #ifdef TRACK_BY_TURN
-                   , CLGLOBAL Particle *particles_by_turn
-                 #endif
-                 #ifdef TRACK_BY_ELEMENT
-                   , CLGLOBAL Particle *particles_by_element
-                 #endif
-);
+CLKERNEL void Block_track(__constant value_t * elements_data,
+			  __constant unsigned int *elements_offsets,
+			  CLGLOBAL struct particle *particles,
+			  unsigned int nturn, unsigned int npart
+#ifdef TRACK_BY_TURN
+			  , CLGLOBAL struct particle *particles_by_turn
+#endif
+#ifdef TRACK_BY_ELEMENT
+			  , CLGLOBAL struct particle *particles_by_element
+#endif
+    );
 
 #else
 
-void Block_track(value_t *elements_data, unsigned int *elements_offsets, tracking_beam *beam,
-                unsigned int nturn, unsigned int npart,
-                Particle *particles_by_turn, Particle *particles_by_element);
-
+void Block_track(value_t * elements_data, unsigned int *elements_offsets,
+		 struct tracking_beam *beam,
+		 unsigned int nturn, unsigned int npart,
+		 struct particle *particles_by_turn,
+		 struct particle *particles_by_element);
 
 #endif
-
 
 #endif

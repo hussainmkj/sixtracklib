@@ -30,28 +30,31 @@
 #define Track_By_Turn_Flag "-DTRACK_BY_TURN"
 #define Track_By_Element_Flag "-DTRACK_BY_ELEMENT"
 
+struct tracking_cl {
+	struct tracking_elements *t_elements;
+	struct tracking_beam *t_beam;
+	struct tracking_beam *t_beam_by_turn;
+	struct tracking_beam *t_beam_by_element;
+	cl_mem t_elements_buffer;
+	cl_mem t_offsets_buffer;
+	cl_mem t_beam_buffer;
+	cl_mem t_beam_by_turn_buffer;
+	cl_mem t_beam_by_element_buffer;
+	cl_context t_context;
+	cl_command_queue t_queue;
+	cl_program t_program;
+	cl_kernel t_kernel;
+	unsigned int t_nturn;
+};
 
-typedef struct {
-    tracking_elements *t_elements;
-    tracking_beam *t_beam;
-    tracking_beam *t_beam_by_turn;
-    tracking_beam *t_beam_by_element;
-    cl_mem t_elements_buffer;
-    cl_mem t_offsets_buffer;
-    cl_mem t_beam_buffer;
-    cl_mem t_beam_by_turn_buffer;
-    cl_mem t_beam_by_element_buffer;
-    cl_context t_context;
-    cl_command_queue t_queue;
-    cl_program t_program;
-    cl_kernel t_kernel;
-    unsigned int t_nturn;
-} tracking_cl;
-
-tracking_cl* tracking_cl_prepare(tracking_elements *elements, tracking_beam *beam, unsigned int nturn, int track_by_turn, int track_by_element);
-cl_int tracking_cl_execute(tracking_cl *track);
-cl_int tracking_cl_read(tracking_cl *track);
-void tracking_cl_clean(tracking_cl *track);
+struct tracking_cl *tracking_cl_prepare(struct tracking_elements *elements,
+					struct tracking_beam *beam,
+					unsigned int nturn,
+					unsigned int track_by_turn,
+					unsigned int track_by_element);
+cl_int tracking_cl_execute(struct tracking_cl *track);
+cl_int tracking_cl_read(struct tracking_cl *track);
+void tracking_cl_clean(struct tracking_cl *track);
 
 #undef CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #endif

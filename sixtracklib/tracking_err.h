@@ -13,11 +13,22 @@
 #ifndef _TRACKING_ERR_
 #define _TRACKING_ERR_
 
-
 #define Check_Failure(x) \
     if(err < 0) { \
         perror(x); \
         return NULL; \
     }
+
+//#define DEBUG
+
+#ifdef DEBUG
+#include <stdio.h>
+#define _D
+#define _DP(...) printf (__VA_ARGS__)
+#else
+//int printf(const char *format, ...);
+#define _D for(;0;)
+// #define _DP(...)
+#endif
 
 #endif
