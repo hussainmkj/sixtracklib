@@ -111,13 +111,23 @@ struct tracking_cl *tracking_cl_prepare(struct tracking_elements *elements,
 			   elements->te_offsets, &err);
 	Check_Failure
 	    ("Failed to create OpenCL buffer for tracking_cl elements offsets.");
+	int npart = beam->b_npart;
+	npart = (npart/2)+(npart%2);
+	struct particle_2 *packed_particles = (struct particle_2 *)malloc(npart * sizeof(struct particle_2));
+	if (packed_particles == NULL) {
+		perror("Failed to allocate memory for tracking_cl field packed_particles");
+		return NULL;
+	}
+	tracking_beam_pack(beam, packed_particles);
 	cl_mem beam_buffer =
 	    clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
-			   beam->b_npart * sizeof(struct particle),
-			   beam->b_particles, &err);
+			   npart * sizeof(struct particle_2),
+			   packed_particles, &err);
 	Check_Failure("Failed to create OpenCL buffer for tracking_cl beam");
 	struct tracking_beam *beam_by_turn = NULL;
+	struct particle_2 *packed_particles_by_turn = NULL;
 	cl_mem beam_by_turn_buffer = NULL;
+	struct particle_2 *packed_particles_by_element = NULL;
 	struct tracking_beam *beam_by_element = NULL;
 	cl_mem beam_by_element_buffer = NULL;
 	if (track_by_turn) {
@@ -138,11 +148,16 @@ struct tracking_cl *tracking_cl_prepare(struct tracking_elements *elements,
 			    ("Failed to allocate tracking_cl beam by turn particles");
 			return NULL;
 		}
+		packed_particles_by_turn = (struct particle_2 *)malloc(nturn * npart * sizeof(struct particle_2));
+		if(packed_particles_by_turn == NULL) {
+			perror("Failed to allocate memory for tracking_cl field packed_particles_by_turn");
+			return NULL;
+		}
 		beam_by_turn_buffer =
 		    clCreateBuffer(context, CL_MEM_WRITE_ONLY,
-				   beam_by_turn->b_npart *
-				   sizeof(struct particle),
-				   beam_by_turn->b_particles, &err);
+				   nturn * npart *
+				   sizeof(struct particle_2),
+				   NULL, &err);
 		Check_Failure
 		    ("Failed to create OpenCL buffer for beam by turn particles.");
 	}
@@ -165,13 +180,18 @@ struct tracking_cl *tracking_cl_prepare(struct tracking_elements *elements,
 			    ("Failed to allocate tracking_cl beam by element particles");
 			return NULL;
 		}
+		packed_particles_by_element = (struct particle_2 *)malloc(elements->te_offsets[0] * nturn * npart * sizeof(struct particle_2));
+		if(packed_particles_by_element == NULL) {
+			perror("Failed to allocate memory for tracking_cl field packed_particles_by_element");
+			return NULL;
+		}
 		beam_by_element_buffer =
 		    clCreateBuffer(context, CL_MEM_WRITE_ONLY,
-				   beam_by_element->b_npart *
-				   sizeof(struct particle),
-				   beam_by_element->b_particles, &err);
+				   elements->te_offsets[0] * nturn * npart *
+				   sizeof(struct particle_2),
+				   NULL, &err);
 		Check_Failure
-		    ("Failed to create OpenCL buffer for beam by turn particles.");
+		    ("Failed to create OpenCL buffer for beam by element particles.");
 	}
 	int i = 0;
 	err = clSetKernelArg(kernel, i++, sizeof(cl_mem), &elements_buffer);
@@ -217,6 +237,9 @@ struct tracking_cl *tracking_cl_prepare(struct tracking_elements *elements,
 	track->t_beam_by_turn_buffer = beam_by_turn_buffer;
 	track->t_beam_by_element = beam_by_element;
 	track->t_beam_by_element_buffer = beam_by_element_buffer;
+	track->t_packed_particles = packed_particles;
+	track->t_packed_particles_by_turn = packed_particles_by_turn;
+	track->t_packed_particles_by_element = packed_particles_by_element;
 	track->t_nturn = nturn;
 	return track;
 }
@@ -224,9 +247,11 @@ struct tracking_cl *tracking_cl_prepare(struct tracking_elements *elements,
 cl_int tracking_cl_execute(struct tracking_cl * track)
 {
 	cl_int err;
+	size_t n = (size_t)(track->t_beam->b_npart);
+	n = (n/2)+(n%2);
 	err =
 	    clEnqueueNDRangeKernel(track->t_queue, track->t_kernel, 1, NULL,
-				   &(track->t_beam->b_npart), NULL, 0, NULL,
+				   &n, NULL, 0, NULL,
 				   NULL);
 	if (err < 0) {
 		perror("Failed to enqueue OpenCL kernel.");
@@ -238,40 +263,44 @@ cl_int tracking_cl_execute(struct tracking_cl * track)
 cl_int tracking_cl_read(struct tracking_cl * track)
 {
 	cl_int err;
+	int n = track->t_beam->b_npart;
+	n = (n/2)+(n%2);
 	err =
 	    clEnqueueReadBuffer(track->t_queue, track->t_beam_buffer, CL_TRUE,
 				0,
-				track->t_beam->b_npart *
-				sizeof(struct particle),
-				track->t_beam->b_particles, 0, NULL, NULL);
+				n * sizeof(struct particle_2),
+				track->t_packed_particles, 0, NULL, NULL);
 	if (err < 0) {
 		perror("Failed to read track_cl beam buffer");
 		return err;
 	}
+	tracking_beam_unpack(track->t_packed_particles, track->t_beam);
 	if (track->t_beam_by_turn_buffer != NULL
 	    && track->t_beam_by_turn != NULL) {
 		err =
 		    clEnqueueReadBuffer(track->t_queue,
 					track->t_beam_by_turn_buffer, CL_TRUE,
-					0, sizeof(struct particle),
-					track->t_beam_by_turn, 0, NULL, NULL);
+					0, track->t_nturn * n * sizeof(struct particle_2),
+					track->t_packed_particles_by_turn, 0, NULL, NULL);
 		if (err < 0) {
 			perror
 			    ("Failed to read tracking_cl beam by turn buffer");
 		}
+		tracking_beam_unpack(track->t_packed_particles_by_turn, track->t_beam_by_turn);
 	}
 	if (track->t_beam_by_element_buffer != NULL
 	    && track->t_beam_by_element != NULL) {
 		err =
 		    clEnqueueReadBuffer(track->t_queue,
 					track->t_beam_by_element_buffer,
-					CL_TRUE, 0, sizeof(struct particle),
-					track->t_beam_by_element, 0, NULL,
+					CL_TRUE, 0, track->t_elements->te_offsets[0] * track->t_nturn * n * sizeof(struct particle_2),
+					track->t_packed_particles_by_element, 0, NULL,
 					NULL);
 		if (err < 0) {
 			perror
 			    ("Failed to read tracking_cl beam by element buffer");
 		}
+		tracking_beam_unpack(track->t_packed_particles_by_element, track->t_beam_by_element);
 	}
 	return err;
 }
@@ -298,6 +327,13 @@ void tracking_cl_clean(struct tracking_cl *track)
 		tracking_beam_clean(track->t_beam_by_element);
 	}
 	tracking_beam_clean(track->t_beam);
+	free(track->t_packed_particles);
+	if(track->t_packed_particles_by_turn != NULL) {
+		free(track->t_packed_particles_by_turn);
+	}
+	if(track->t_packed_particles_by_element != NULL) {
+		free(track->t_packed_particles_by_element);
+	}
 	tracking_elements_clean(track->t_elements);
 	free(track);
 }

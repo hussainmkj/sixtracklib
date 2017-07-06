@@ -35,6 +35,9 @@ struct tracking_cl {
 	struct tracking_beam *t_beam;
 	struct tracking_beam *t_beam_by_turn;
 	struct tracking_beam *t_beam_by_element;
+	struct particle_2 *t_packed_particles;
+	struct particle_2 *t_packed_particles_by_turn;
+	struct particle_2 *t_packed_particles_by_element;
 	cl_mem t_elements_buffer;
 	cl_mem t_offsets_buffer;
 	cl_mem t_beam_buffer;

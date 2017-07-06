@@ -17,16 +17,16 @@ struct transv_field_gauss_round_data {
 _CUDA_HOST_DEVICE_
 void get_transv_field_gauss_round(__constant struct
 				  transv_field_gauss_round_data *data,
-				  double x, double y, double *Ex,
-				  double *Ey)
+				  doublePSIZE x, doublePSIZE y, doublePSIZE *Ex,
+				  doublePSIZE *Ey)
 {
-	double r2, temp;
+	doublePSIZE r2, temp;
 
 	r2 = (x - data->Delta_x) * (x - data->Delta_x) + (y -
 							  data->Delta_y) * (y -
 									    data->
 									    Delta_y);
-	if (r2 < 1e-20)
+	if (all(r2 < 1e-20))
 		temp = sqrt(r2) / (2. * PI * EPSILON_0 * data->sigma);	//linearised
 	else
 		temp =

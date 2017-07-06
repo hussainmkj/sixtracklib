@@ -20,6 +20,7 @@
 #endif
 
 #include "particle.h"
+#include "particle_v.h"
 #include "constants.h"
 
 /******************************************/
@@ -31,9 +32,9 @@ struct drift {
 };
 
 _CUDA_HOST_DEVICE_
-void drift_track(CLGLOBAL struct particle *p, __constant struct drift *el)
+void drift_track(CLGLOBAL struct particle_v *p, __constant struct drift *el)
 {
-	double xp, yp;
+	doublePSIZE xp, yp;
 	double length = el->length;
 	xp = p->px * p->rpp;
 	yp = p->py * p->rpp;
@@ -41,7 +42,6 @@ void drift_track(CLGLOBAL struct particle *p, __constant struct drift *el)
 	p->y += yp * length;
 	p->sigma += length * (1 - p->rvv * (1 + (xp * xp + yp * yp) / 2));
 	p->s += length;
-//  _DP("Drift_track: length=%g\n",length);
 }
 
 /******************************************/
@@ -53,10 +53,10 @@ struct drift_exact {
 };
 
 _CUDA_HOST_DEVICE_
-void drift_exact_track(CLGLOBAL struct particle *p,
+void drift_exact_track(CLGLOBAL struct particle_v *p,
 			__constant struct drift_exact *el)
 {
-	double lpzi, lbzi, px, py, opd;
+	doublePSIZE lpzi, lbzi, px, py, opd;
 	double length = el->length;
 	opd = 1 + p->delta;
 	px = p->px;
@@ -82,10 +82,10 @@ struct multipole {
 };
 
 _CUDA_HOST_DEVICE_
-void multipole_track(CLGLOBAL struct particle *p,
+void multipole_track(CLGLOBAL struct particle_v *p,
 		     __constant struct multipole *el)
 {
-	double x, y, chi, dpx, dpy, zre, zim, b1l, a1l, hxx, hyy;
+	doublePSIZE x, y, chi, dpx, dpy, zre, zim, b1l, a1l, hxx, hyy;
 	long int order = el->order;
 	double hxl = el->hxl;
 	double hyl = el->hyl;
@@ -96,18 +96,14 @@ void multipole_track(CLGLOBAL struct particle *p,
 	x = p->x;
 	y = p->y;
 	chi = p->chi;
-//  _DP("Multipole_track: dpx,y=%g %G\n",dpx,dpy);
 	for (int ii = order - 1; ii >= 0; ii--) {
 		zre = (dpx * x - dpy * y);
 		zim = (dpx * y + dpy * x);
-//    _DP("Multipole_track: y,x=%g %G\n",x,y);
 		dpx = bal[ii * 2] + zre;
 		dpy = bal[ii * 2 + 1] + zim;
-//    _DP("Multipole_track: dpx,y=%g %G\n",dpx,dpy);
 	}
 	dpx = -chi * dpx;
 	dpy = chi * dpy;
-//  _DP("Multipole_track: dpx,y=%g %G\n",dpx,dpy);
 	if (l > 0) {
 		b1l = chi * bal[0];
 		a1l = chi * bal[1];
@@ -132,12 +128,12 @@ struct cavity {
 };
 
 _CUDA_HOST_DEVICE_
-void cavity_track(CLGLOBAL struct particle *p, __constant struct cavity *el)
+void cavity_track(CLGLOBAL struct particle_v *p, __constant struct cavity *el)
 {
 	double volt = el->volt;
 	double freq = el->freq;
 	double lag = el->lag;
-	double phase, pt, opd;
+	doublePSIZE phase, pt, opd;
 	phase = lag - 2 * M_PI / C_LIGHT * freq * p->sigma / p->beta0;
 	p->psigma += p->chi * volt * sin(phase) / (p->p0c * p->beta0);
 	pt = p->psigma * p->beta0;
@@ -161,9 +157,9 @@ struct align {
 };
 
 _CUDA_HOST_DEVICE_
-void align_track(CLGLOBAL struct particle *p, __constant struct align *el)
+void align_track(CLGLOBAL struct particle_v *p, __constant struct align *el)
 {
-	double xn, yn;
+	doublePSIZE xn, yn;
 	double cz = el->cz;
 	double sz = el->sz;
 	double dx = el->dx;
@@ -220,7 +216,7 @@ struct linmap_data linmap_init(double alpha_x_s0, double beta_x_s0,
 }
 
 _CUDA_HOST_DEVICE_
-void linmap_track(CLGLOBAL struct particle *p,
+void linmap_track(CLGLOBAL struct particle_v *p,
 		  __constant struct linmap_data *el)
 {
 	double M00 = el->matrix[0];
@@ -231,10 +227,10 @@ void linmap_track(CLGLOBAL struct particle *p,
 	double M23 = el->matrix[5];
 	double M32 = el->matrix[6];
 	double M33 = el->matrix[7];
-	double x0 = p->x;
-	double px0 = p->px;
-	double y0 = p->y;
-	double py0 = p->py;
+	doublePSIZE x0 = p->x;
+	doublePSIZE px0 = p->px;
+	doublePSIZE y0 = p->y;
+	doublePSIZE py0 = p->py;
 
 	p->x = M00 * x0 + M01 * px0;
 	p->px = M10 * x0 + M11 * px0;
@@ -258,10 +254,10 @@ struct bb4d_data {
 };
 
 _CUDA_HOST_DEVICE_
-void bb4d_track(CLGLOBAL struct particle *p,
+void bb4d_track(CLGLOBAL struct particle_v *p,
 		__constant struct bb4d_data *el)
 {
-	double Ex, Ey;
+	doublePSIZE Ex, Ey;
 
 #ifdef DATA_PTR_IS_OFFSET
 	__constant void *ptr =
@@ -287,7 +283,7 @@ void bb4d_track(CLGLOBAL struct particle *p,
 		Ey = 1 / 0.;
 	}
 
-	double fact_kick =
+	doublePSIZE fact_kick =
 	    p->chi * el->N_s * el->q_s * p->q0 * (1. +
 						  p->beta * el->beta_s) /
 	    (p->p0c * QELEM * (p->beta + el->beta_s));

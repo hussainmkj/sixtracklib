@@ -24,5 +24,7 @@ struct tracking_beam *tracking_beam_create_args(unsigned int n, double mass0,
 						double p0c);
 struct tracking_beam *tracking_beam_create(unsigned int n);
 void tracking_beam_clean(struct tracking_beam *beam);
+void tracking_beam_pack(struct tracking_beam *src, struct particle_2 *dest_beam);
+void tracking_beam_unpack(struct particle_2 *src, struct tracking_beam *dest_beam);
 
 #endif

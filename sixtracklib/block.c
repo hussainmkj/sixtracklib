@@ -10,13 +10,17 @@
 //granted to it by virtue of its status as an Intergovernmental Organization or
 //submit itself to any jurisdiction.
 
+
 #include "block.h"
 
 #define DATA_PTR_IS_OFFSET
+
+#ifdef _GPUCODE
 #include "../common/track.h"
 
+
 _CUDA_HOST_DEVICE_
-void track_single(__constant value_t * elem, CLGLOBAL struct particle *p)
+void track_single(__constant value_t * elem, CLGLOBAL struct particle_v *p)
 {
 	enum element_type typeid = (enum element_type)(elem[0].i64);
 	elem++;
@@ -49,17 +53,17 @@ void track_single(__constant value_t * elem, CLGLOBAL struct particle *p)
 
 // Tracking kernel
 
-#ifdef _GPUCODE
+//#ifdef _GPUCODE
 
 CLKERNEL void Block_track(__constant value_t * elements_data,
 			  __constant unsigned int *elements_offsets,
-			  CLGLOBAL struct particle *particles,
+			  CLGLOBAL struct particle_v *particles,
 			  unsigned int nturn, unsigned int npart
 #ifdef TRACK_BY_TURN
-			  , CLGLOBAL struct particle *particles_by_turn
+			  , CLGLOBAL struct particle_v *particles_by_turn
 #endif
 #ifdef TRACK_BY_ELEMENT
-			  , CLGLOBAL struct particle *particles_by_element
+			  , CLGLOBAL struct particle_v *particles_by_element
 #endif
 			  )
 {
@@ -81,13 +85,13 @@ CLKERNEL void Block_track(__constant value_t * elements_data,
 		i_elem = 1;
 		for (c_elem = nelem; c_elem--; i_elem++) {
 			track_single(elements_data + elements_offsets[i_elem],
-				     particles);
+				     (CLGLOBAL struct particle_v *)particles);
 #ifdef TRACK_BY_ELEMENT
 			*particles_by_element = *particles;
 			particles_by_element += npart;
 #endif
 		}
-		particles->turn += select(0, 1, particles->state >= 0);
+		particles->turn += select((int2)(0, 0), (int2)(1, 1), particles->state >= 0);
 #ifdef TRACK_BY_TURN
 		*particles_by_turn = *particles;
 		particles_by_turn += npart;
@@ -98,7 +102,7 @@ CLKERNEL void Block_track(__constant value_t * elements_data,
 #else
 
 #include <math.h>
-
+/*
 void Block_track(value_t * elements_data, unsigned int *elements_offsets,
 		 struct tracking_beam *beam,
 		 unsigned int nturn, unsigned int npart,
@@ -134,5 +138,5 @@ void Block_track(value_t * elements_data, unsigned int *elements_offsets,
 		}
 	}
 }
-
+*/
 #endif

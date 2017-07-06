@@ -13,6 +13,10 @@
 #ifndef _PARTICLE_
 #define _PARTICLE_
 
+#define PSIZE 2
+#define doublePSIZE double2
+#define intPSIZE int2
+
 struct particle {
 	int partid;
 	int elemid;
@@ -37,6 +41,32 @@ struct particle {
 	double beta0;
 	double gamma0;
 	double p0c;		//eV
+};
+
+struct particle_2 {
+	int partid[PSIZE];
+	int elemid[PSIZE];
+	int turn[PSIZE];
+	int state[PSIZE];		//negative particle lost
+	double s[PSIZE];
+	double x[PSIZE];
+	double px[PSIZE];		// Px/P0
+	double y[PSIZE];
+	double py[PSIZE];		// Px/P0
+	double sigma[PSIZE];
+	double psigma[PSIZE];		// (E-E0)/ (beta0 P0c)
+	double chi[PSIZE];		// q/q0 * m/m0
+	double delta[PSIZE];
+	double rpp[PSIZE];		// ratio P0/P
+	double rvv[PSIZE];		// ratio beta / beta0
+	double beta[PSIZE];
+	double gamma[PSIZE];
+	double m0[PSIZE];		// eV
+	double q0[PSIZE];		// C
+	double q[PSIZE];		// C
+	double beta0[PSIZE];
+	double gamma0[PSIZE];
+	double p0c[PSIZE];		//eV
 };
 
 #endif

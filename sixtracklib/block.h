@@ -24,26 +24,27 @@ enum element_type {
 };
 
 #ifdef _GPUCODE
+#include "../common/particle_v.h"
 
 CLKERNEL void Block_track(__constant value_t * elements_data,
 			  __constant unsigned int *elements_offsets,
-			  CLGLOBAL struct particle *particles,
+			  CLGLOBAL struct particle_v *particles,
 			  unsigned int nturn, unsigned int npart
 #ifdef TRACK_BY_TURN
-			  , CLGLOBAL struct particle *particles_by_turn
+			  , CLGLOBAL struct particle_v *particles_by_turn
 #endif
 #ifdef TRACK_BY_ELEMENT
-			  , CLGLOBAL struct particle *particles_by_element
+			  , CLGLOBAL struct particle_v *particles_by_element
 #endif
     );
 
 #else
 
-void Block_track(value_t * elements_data, unsigned int *elements_offsets,
+/*void Block_track(value_t * elements_data, unsigned int *elements_offsets,
 		 struct tracking_beam *beam,
 		 unsigned int nturn, unsigned int npart,
 		 struct particle *particles_by_turn,
-		 struct particle *particles_by_element);
+		 struct particle *particles_by_element);*/
 
 #endif
 

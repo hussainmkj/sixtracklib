@@ -13,7 +13,7 @@ submit itself to any jurisdiction.
 """
 
 
-from legacy_cblock import cBlock
+#from legacy_cblock import cBlock
 from cblock import Block
 from cbeam import cBeam
 
@@ -23,5 +23,6 @@ except ImportError:
     try:
         import track.cl as default_track
     except ImportError:
-        import track.cpu as default_track
+        #import track.cpu as default_track
+        pass
 
